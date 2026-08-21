@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generar Iconos PWA</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+            gap: 30px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .icon-preview {
+            font-size: 80px;
+            background: #2e7d32;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            margin: 10px auto;
+            color: white;
+        }
+        button {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        input {
+            font-size: 40px;
+            padding: 10px;
+            width: 80px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .emoji-grid span {
+            font-size: 40px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .emoji-grid span:hover {
+            background: #2e7d32;
+            transform: scale(1.1);
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .step code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>💰 Generador de Iconos PWA</h2>
+        <p>Selecciona un emoji o escribe tu propio símbolo</p>
+
+        <!-- Emojis sugeridos -->
+        <div class="emoji-grid">
+            <span onclick="seleccionarEmoji('💰')">💰</span>
+            <span onclick="seleccionarEmoji('💵')">💵</span>
+            <span onclick="seleccionarEmoji('🏦')">🏦</span>
+            <span onclick="seleccionarEmoji('📊')">📊</span>
+            <span onclick="seleccionarEmoji('💳')">💳</span>
+            <span onclick="seleccionarEmoji('📈')">📈</span>
+            <span onclick="seleccionarEmoji('🤑')">🤑</span>
+            <span onclick="seleccionarEmoji('💎')">💎</span>
+        </div>
+
+        <div style="margin: 15px 0;">
+            <label>O escribe tu emoji:</label>
+            <input type="text" id="emojiInput" value="💰" maxlength="2" oninput="actualizarVistaPrevia()">
+        </div>
+
+        <!-- Vista previa -->
+        <div class="icon-preview" id="vistaPrevia">
+            💰
+        </div>
+
+        <p style="font-size: 14px; color: #666;">
+            Icono: <strong id="iconoTexto">💰</strong>
+        </p>
+
+        <div>
+            <button onclick="descargarIcono(192)">📱 Descargar 192x192</button>
+            <button onclick="descargarIcono(512)">📱 Descargar 512x512</button>
+        </div>
+
+        <div class="step">
+            <strong>📝 Instrucciones:</strong>
+            <ol style="margin: 10px 0 0 20px; font-size: 14px;">
+                <li>Selecciona o escribe un emoji</li>
+                <li>Haz clic en <strong>Descargar 192x192</strong> y guarda como <code>icon-192.png</code></li>
+                <li>Haz clic en <strong>Descargar 512x512</strong> y guarda como <code>icon-512.png</code></li>
+                <li>Guarda ambos en la carpeta <code>assets/icons/</code></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function seleccionarEmoji(emoji) {
+            document.getElementById('emojiInput').value = emoji;
+            actualizarVistaPrevia();
+        }
+
+        function actualizarVistaPrevia() {
+            const emoji = document.getElementById('emojiInput').value || '💰';
+            document.getElementById('vistaPrevia').textContent = emoji;
+            document.getElementById('iconoTexto').textContent = emoji;
+        }
+
+        function descargarIcono(tamaño) {
+            const emoji = document.getElementById('emojiInput').value || '💰';
+            
+            // Crear un canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = tamaño;
+            canvas.height = tamaño;
+            const ctx = canvas.getContext('2d');
+
+            // Fondo
+            ctx.fillStyle = '#2e7d32';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, tamaño, tamaño, tamaño * 0.15);
+            ctx.fill();
+
+            // Texto (emoji)
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${tamaño * 0.55}px Arial, 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif`;
+            ctx.fillStyle = 'white';
+            ctx.fillText(emoji, tamaño / 2, tamaño / 2 + tamaño * 0.03);
+
+            // Descargar
+            const link = document.createElement('a');
+            link.download = `icon-${tamaño}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Polifill para roundRect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (r > w/2) r = w/2;
+                if (r > h/2) r = h/2;
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                return this;
+            };
+        }
+    </script>
+
+</body>
+</html>
