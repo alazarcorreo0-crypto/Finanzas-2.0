@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <title>Presupuesto Personal</title>
+</head>
+<body>
+    <!-- Barra superior -->
+    <header class="header">
+        <h1>💰 Mi Presupuesto</h1>
+        <span class="year">2025</span>
+    </header>
+
+    <!-- Menú principal -->
+    <nav class="main-nav">
+        <a href="presupuesto.html" class="nav-card">
+            <span class="icon">📋</span>
+            <h3>Presupuesto</h3>
+            <p>Planifica tus ingresos y gastos</p>
+        </a>
+        <a href="transacciones.html" class="nav-card">
+            <span class="icon">💳</span>
+            <h3>Transacciones</h3>
+            <p>Registra tus gastos diarios</p>
+        </a>
+        <a href="dashboard.html" class="nav-card">
+            <span class="icon">📊</span>
+            <h3>Dashboard</h3>
+            <p>Visualiza tus finanzas</p>
+        </a>
+        <a href="patrimonio.html" class="nav-card">
+            <span class="icon">🏦</span>
+            <h3>Patrimonio Neto</h3>
+            <p>Sigue tus activos y pasivos</p>
+        </a>
+        <a href="configuracion.html" class="nav-card">
+            <span class="icon">⚙️</span>
+            <h3>Configuración</h3>
+            <p>Ajusta tu presupuesto</p>
+        </a>
+    </nav>
+
+    <!-- Resumen rápido -->
+    <section class="quick-summary">
+        <div class="summary-card">
+            <span class="label">Remanente</span>
+            <span class="value" id="remanente">$0.00</span>
+        </div>
+        <div class="summary-card">
+            <span class="label">Ahorro</span>
+            <span class="value" id="ahorro">$0.00</span>
+        </div>
+        <div class="summary-card">
+            <span class="label">Patrimonio</span>
+            <span class="value" id="patrimonio">$0.00</span>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
