@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+    <title>Transacciones</title>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="color:white; text-decoration:none;">←</a>
+        <h1>💳 Transacciones</h1>
+        <span class="year" id="mesActual">Enero</span>
+    </header>
+
+    <div style="display:flex; justify-content:space-between; padding:8px 16px; gap:8px;">
+        <button onclick="cambiarMes(-1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">◀</button>
+        <span id="mesDisplay" style="font-weight:bold; font-size:18px; padding:8px;">Enero 2025</span>
+        <button onclick="cambiarMes(1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">▶</button>
+    </div>
+
+    <!-- Formulario -->
+    <div class="transaction-form">
+        <select id="categoriaSelect">
+            <option value="INGRESOS">Ingresos</option>
+            <option value="GASTOS_ESENCIALES">Gastos Esenciales</option>
+            <option value="GASTOS_DISCRECIONALES">Gastos Discrecionales</option>
+            <option value="PAGO_DEUDAS">Pago Deudas</option>
+            <option value="AHORROS">Ahorros</option>
+            <option value="INVERSIONES">Inversiones</option>
+        </select>
+        <select id="subcategoriaSelect">
+            <option value="">Seleccionar subcategoría</option>
+        </select>
+        <input type="date" id="fechaInput">
+        <input type="number" id="montoInput" placeholder="Monto" step="0.01">
+        <input type="text" id="notasInput" placeholder="Notas (opcional)">
+        <button onclick="agregarTransaccion()">➕ Agregar Transacción</button>
+    </div>
+
+    <!-- Lista de transacciones -->
+    <div id="resumen" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 16px;">
+        <div style="background:#e8f5e9; padding:8px; border-radius:8px; text-align:center;">
+            <small>Ingresos</small>
+            <strong id="totalIngresos" style="display:block; color:#2e7d32;">$0.00</strong>
+        </div>
+        <div style="background:#fce4ec; padding:8px; border-radius:8px; text-align:center;">
+            <small>Gastos</small>
+            <strong id="totalGastos" style="display:block; color:#c62828;">$0.00</strong>
+        </div>
+        <div style="background:#e3f2fd; padding:8px; border-radius:8px; text-align:center;">
+            <small>Remanente</small>
+            <strong id="totalRemanente" style="display:block;">$0.00</strong>
+        </div>
+    </div>
+
+    <div class="transaction-list" id="transactionList"></div>
+
+    <!-- Navegación inferior -->
+    <nav class="bottom-nav">
+        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html" class="active"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html"><span class="icon">📊</span>Dashboard</a>
+        <a href="patrimonio.html"><span class="icon">🏦</span>Patrimonio</a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        let mesActual = new Date().getMonth() + 1;
+        let anioActual = new Date().getFullYear();
+        let transacciones = [];
+        let presupuesto = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            presupuesto = await window.app.obtenerPresupuesto();
+            document.getElementById('fechaInput').value = new Date().toISOString().split('T')[0];
+            await cargarSubcategorias();
+            await cargarTransacciones();
+        });
+
+        async function cargarSubcategorias() {
+            const categoria = document.getElementById('categoriaSelect').value;
+            const select = document.getElementById('subcategoriaSelect');
+            select.innerHTML = '<option value="">Seleccionar subcategoría</option>';
+            
+            const items = presupuesto.filter(p => p.categoria === categoria);
+            items.forEach(item => {
+                if (item.subcategoria) {
+                    const option = document.createElement('option');
+                    option.value = item.subcategoria;
+                    option.textContent = item.subcategoria;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        document.getElementById('categoriaSelect').addEventListener('change', cargarSubcategorias);
+
+        async function cargarTransacciones() {
+            transacciones = await window.app.obtenerTransacciones(mesActual, anioActual);
+            renderizarTransacciones();
+            actualizarResumen();
+        }
+
+        function renderizarTransacciones() {
+            const list = document.getElementById('transactionList');
+            list.innerHTML = '';
+            
+            if (transacciones.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">No hay transacciones este mes</p>';
+                return;
+            }
+            
+            // Ordenar por fecha (más reciente primero)
+            transacciones.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            
+            transacciones.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'transaction-item';
+                const esIngreso = t.categoria === 'INGRESOS';
+                div.innerHTML = `
+                    <div class="info">
+                        <span>${t.subcategoria || t.categoria}</span>
+                        <span class="category">${t.categoria} • ${t.fecha}</span>
+                        ${t.notas ? `<small style="color:#999;">${t.notas}</small>` : ''}
+                    </div>
+                    <div>
+                        <span class="amount ${esIngreso ? 'ingreso' : 'gasto'}">
+                            ${esIngreso ? '+' : '-'} ${window.app.formatearMoneda(t.monto)}
+                        </span>
+                        <button onclick="eliminarTransaccion(${t.id})" style="background:none; border:none; color:#c62828; font-size:18px; margin-left:8px;">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function actualizarResumen() {
+            const totales = window.app.calcularTotalesPorCategoria(transacciones);
+            const ingresos = totales.INGRESOS || 0;
+            const gastos = (totales.GASTOS_ESENCIALES || 0) + 
+                          (totales.GASTOS_DISCRECIONALES || 0) + 
+                          (totales.PAGO_DEUDAS || 0) + 
+                          (totales.AHORROS || 0) + 
+                          (totales.INVERSIONES || 0);
+            const remanente = ingresos - gastos;
+            
+            document.getElementById('totalIngresos').textContent = window.app.formatearMoneda(ingresos);
+            document.getElementById('totalGastos').textContent = window.app.formatearMoneda(gastos);
+            document.getElementById('totalRemanente').textContent = window.app.formatearMoneda(remanente);
+            document.getElementById('totalRemanente').style.color = remanente >= 0 ? '#2e7d32' : '#c62828';
+        }
+
+        async function agregarTransaccion() {
+            const categoria = document.getElementById('categoriaSelect').value;
+            const subcategoria = document.getElementById('subcategoriaSelect').value;
+            const fecha = document.getElementById('fechaInput').value;
+            const monto = parseFloat(document.getElementById('montoInput').value);
+            const notas = document.getElementById('notasInput').value;
+            
+            if (!monto || monto <= 0) {
+                alert('Por favor ingresa un monto válido');
+                return;
+            }
+            
+            if (!subcategoria) {
+                alert('Por favor selecciona una subcategoría');
+                return;
+            }
+            
+            await window.app.guardarTransaccion({
+                mes: mesActual,
+                anio: anioActual,
+                categoria,
+                subcategoria,
+                fecha,
+                monto,
+                notas
+            });
+            
+            document.getElementById('montoInput').value = '';
+            document.getElementById('notasInput').value = '';
+            
+            await cargarTransacciones();
+        }
+
+        async function eliminarTransaccion(id) {
+            if (confirm('¿Eliminar esta transacción?')) {
+                await window.app.eliminarTransaccion(id);
+                await cargarTransacciones();
+            }
+        }
+
+        function cambiarMes(delta) {
+            mesActual += delta;
+            if (mesActual > 12) {
+                mesActual = 1;
+                anioActual++;
+            } else if (mesActual < 1) {
+                mesActual = 12;
+                anioActual--;
+            }
+            document.getElementById('mesActual').textContent = window.app.obtenerNombreMes(mesActual);
+            document.getElementById('mesDisplay').textContent = `${window.app.obtenerNombreMes(mesActual)} ${anioActual}`;
+            cargarTransacciones();
+        }
+    </script>
+</body>
+</html>
