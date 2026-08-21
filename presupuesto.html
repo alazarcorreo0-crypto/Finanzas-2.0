@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+    <title>Presupuesto</title>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="color:white; text-decoration:none;">←</a>
+        <h1>📋 Presupuesto</h1>
+        <span class="year" id="remanenteHeader">$0.00</span>
+    </header>
+
+    <div id="presupuesto-container">
+        <!-- Las categorías se generarán dinámicamente -->
+    </div>
+
+    <!-- Navegación inferior -->
+    <nav class="bottom-nav">
+        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html" class="active"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html"><span class="icon">📊</span>Dashboard</a>
+        <a href="patrimonio.html"><span class="icon">🏦</span>Patrimonio</a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            await cargarPresupuesto();
+        });
+
+        async function cargarPresupuesto() {
+            const container = document.getElementById('presupuesto-container');
+            container.innerHTML = '';
+            
+            const presupuesto = await window.app.obtenerPresupuesto();
+            const categorias = Object.values(window.app.CATEGORIAS);
+            let totalIngresos = 0;
+            
+            // Calcular total de ingresos
+            presupuesto.forEach(item => {
+                if (item.categoria === 'INGRESOS') {
+                    totalIngresos += item.monto;
+                }
+            });
+            
+            // Generar tarjetas por categoría
+            for (const categoria of categorias) {
+                const items = presupuesto.filter(p => p.categoria === categoria);
+                if (items.length === 0) continue;
+                
+                const total = items.reduce((sum, i) => sum + i.monto, 0);
+                const porcentaje = totalIngresos > 0 ? (total / totalIngresos * 100) : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `
+                    <div class="category-title">
+                        <span>${categoria.replace('_', ' ')}</span>
+                        <span>${window.app.formatearMoneda(total)} (${porcentaje.toFixed(1)}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="fill" style="width: ${Math.min(porcentaje, 100)}%; background: ${porcentaje > 50 ? '#c62828' : '#4caf50'}"></div>
+                    </div>
+                    <div id="sub-${categoria}">
+                        ${items.map(item => `
+                            <div class="subcategory">
+                                <span>${item.subcategoria || 'Sin nombre'}</span>
+                                <span>
+                                    <input type="number" 
+                                           value="${item.monto}" 
+                                           data-id="${item.id}"
+                                           data-categoria="${categoria}"
+                                           data-sub="${item.subcategoria}"
+                                           style="width:100px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; text-align:right;"
+                                           onchange="actualizarMonto(this)">
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+            
+            // Calcular remanente
+            const remanente = window.app.calcularRemanente(presupuesto);
+            document.getElementById('remanenteHeader').textContent = window.app.formatearMoneda(remanente);
+        }
+
+        async function actualizarMonto(input) {
+            const id = parseInt(input.dataset.id);
+            const categoria = input.dataset.categoria;
+            const subcategoria = input.dataset.sub;
+            const monto = parseFloat(input.value) || 0;
+            
+            await window.app.guardarPresupuesto(categoria, subcategoria, monto);
+            await cargarPresupuesto();
+        }
+    </script>
+</body>
+</html>
