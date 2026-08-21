@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+    <title>Patrimonio Neto</title>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="color:white; text-decoration:none;">←</a>
+        <h1>🏦 Patrimonio Neto</h1>
+        <span class="year" id="patrimonioTotal">$0.00</span>
+    </header>
+
+    <div style="display:flex; justify-content:space-between; padding:8px 16px; gap:8px;">
+        <button onclick="cambiarMesPatrimonio(-1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">◀</button>
+        <span id="mesPatrimonioDisplay" style="font-weight:bold; font-size:18px; padding:8px;">Enero 2025</span>
+        <button onclick="cambiarMesPatrimonio(1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">▶</button>
+    </div>
+
+    <div style="padding:8px 16px;">
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:12px;">
+            <h3 style="margin-bottom:8px;">💰 Activos</h3>
+            <div id="activosContainer"></div>
+            <button onclick="agregarActivo()" style="width:100%; padding:8px; background:#e8f5e9; border:1px dashed #4caf50; border-radius:8px; margin-top:8px;">+ Agregar Activo</button>
+        </div>
+
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom:8px;">📉 Pasivos</h3>
+            <div id="pasivosContainer"></div>
+            <button onclick="agregarPasivo()" style="width:100%; padding:8px; background:#fce4ec; border:1px dashed #c62828; border-radius:8px; margin-top:8px;">+ Agregar Pasivo</button>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:8px 16px; margin-top:8px;">
+        <div style="background:#e8f5e9; padding:12px; border-radius:8px; text-align:center;">
+            <small>Activos</small>
+            <strong id="totalActivos" style="display:block; color:#2e7d32;">$0.00</strong>
+        </div>
+        <div style="background:#fce4ec; padding:12px; border-radius:8px; text-align:center;">
+            <small>Pasivos</small>
+            <strong id="totalPasivos" style="display:block; color:#c62828;">$0.00</strong>
+        </div>
+        <div style="background:#e3f2fd; padding:12px; border-radius:8px; text-align:center;">
+            <small>Patrimonio</small>
+            <strong id="patrimonioNeto" style="display:block;">$0.00</strong>
+        </div>
+    </div>
+
+    <!-- Navegación inferior -->
+    <nav class="bottom-nav">
+        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html"><span class="icon">📊</span>Dashboard</a>
+        <a href="patrimonio.html" class="active"><span class="icon">🏦</span>Patrimonio</a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        let mesPatrimonio = new Date().getMonth() + 1;
+        let anioPatrimonio = new Date().getFullYear();
+        let activos = [];
+        let pasivos = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            await cargarPatrimonio();
+        });
+
+        async function cargarPatrimonio() {
+            activos = await window.app.obtenerPatrimonio(mesPatrimonio);
+            pasivos = await window.app.obtenerPatrimonio(mesPatrimonio + 100);
+            
+            renderizarActivos();
+            renderizarPasivos();
+            actualizarResumenPatrimonio();
+        }
+
+        function renderizarActivos() {
+            const container = document.getElementById('activosContainer');
+            container.innerHTML = '';
+            
+            if (activos.length === 0) {
+                container.innerHTML = '<p style="color:#999; font-size:14px;">No hay activos registrados</p>';
+                return;
+            }
+            
+            activos.forEach(a => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;';
+                div.innerHTML = `
+                    <span>${a.subcategoria}</span>
+                    <span>
+                        <input type="number" value="${a.monto}" 
+                               onchange="actualizarActivo(${a.id}, this.value)"
+                               style="width:100px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; text-align:right;">
+                        <button onclick="eliminarPatrimonio(${a.id})" style="background:none; border:none; color:#c62828;">✕</button>
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarPasivos() {
+            const container = document.getElementById('pasivosContainer');
+            container.innerHTML = '';
+            
+            if (pasivos.length === 0) {
+                container.innerHTML = '<p style="color:#999; font-size:14px;">No hay pasivos registrados</p>';
+                return;
+            }
+            
+            pasivos.forEach(p => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;';
+                div.innerHTML = `
+                    <span>${p.subcategoria}</span>
+                    <span>
+                        <input type="number" value="${p.monto}" 
+                               onchange="actualizarPasivo(${p.id}, this.value)"
+                               style="width:100px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; text-align:right;">
+                        <button onclick="eliminarPatrimonio(${p.id})" style="background:none; border:none; color:#c62828;">✕</button>
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function actualizarResumenPatrimonio() {
+            const totalActivos = activos.reduce((sum, a) => sum + a.monto, 0);
+            const totalPasivos = pasivos.reduce((sum, p) => sum + p.monto, 0);
+            const patrimonio = totalActivos - totalPasivos;
+            
+            document.getElementById('totalActivos').textContent = window.app.formatearMoneda(totalActivos);
+            document.getElementById('totalPasivos').textContent = window.app.formatearMoneda(totalPasivos);
+            document.getElementById('patrimonioNeto').textContent = window.app.formatearMoneda(patrimonio);
+            document.getElementById('patrimonioTotal').textContent = window.app.formatearMoneda(patrimonio);
+            document.getElementById('patrimonioNeto').style.color = patrimonio >= 0 ? '#2e7d32' : '#c62828';
+        }
+
+        async function agregarActivo() {
+            const nombre = prompt('Nombre del activo:');
+            if (!nombre) return;
+            const monto = parseFloat(prompt('Monto:'));
+            if (isNaN(monto) || monto < 0) return;
+            
+            await window.app.guardarPatrimonio({
+                mes: mesPatrimonio,
+                tipo: 'ACTIVO',
+                subcategoria: nombre,
+                monto: monto
+            });
+            await cargarPatrimonio();
+        }
+
+        async function agregarPasivo() {
+            const nombre = prompt('Nombre del pasivo:');
+            if (!nombre) return;
+            const monto = parseFloat(prompt('Monto:'));
+            if (isNaN(monto) || monto < 0) return;
+            
+            await window.app.guardarPatrimonio({
+                mes: mesPatrimonio + 100,
+                tipo: 'PASIVO',
+                subcategoria: nombre,
+                monto: monto
+            });
+            await cargarPatrimonio();
+        }
+
+        async function actualizarActivo(id, nuevoMonto) {
+            const item = activos.find(a => a.id === id);
+            if (item) {
+                item.monto = parseFloat(nuevoMonto) || 0;
+                // En una implementación real, aquí se actualizaría en la DB
+                await window.app.guardarPatrimonio({
+                    mes: mesPatrimonio,
+                    tipo: 'ACTIVO',
+                    subcategoria: item.subcategoria,
+                    monto: item.monto
+                });
+                await cargarPatrimonio();
+            }
+        }
+
+        async function actualizarPasivo(id, nuevoMonto) {
+            const item = pasivos.find(p => p.id === id);
+            if (item) {
+                item.monto = parseFloat(nuevoMonto) || 0;
+                await window.app.guardarPatrimonio({
+                    mes: mesPatrimonio + 100,
+                    tipo: 'PASIVO',
+                    subcategoria: item.subcategoria,
+                    monto: item.monto
+                });
+                await cargarPatrimonio();
+            }
+        }
+
+        async function eliminarPatrimonio(id) {
+            if (confirm('¿Eliminar este ítem?')) {
+                const tx = window.app.db.transaction('patrimonio', 'readwrite');
+                tx.objectStore('patrimonio').delete(id);
+                await cargarPatrimonio();
+            }
+        }
+
+        function cambiarMesPatrimonio(delta) {
+            mesPatrimonio += delta;
+            if (mesPatrimonio > 12) {
+                mesPatrimonio = 1;
+                anioPatrimonio++;
+            } else if (mesPatrimonio < 1) {
+                mesPatrimonio = 12;
+                anioPatrimonio--;
+            }
+            document.getElementById('mesPatrimonioDisplay').textContent = 
+                `${window.app.obtenerNombreMes(mesPatrimonio)} ${anioPatrimonio}`;
+            cargarPatrimonio();
+        }
+    </script>
+</body>
+</html>
