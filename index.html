@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <title>Presupuesto Personal</title>
+    <title>Mi Presupuesto Personal</title>
 </head>
 <body>
-    <!-- Barra superior -->
     <header class="header">
         <h1>💰 Mi Presupuesto</h1>
-        <span class="year">2025</span>
+        <span class="year" id="anioHeader">2025</span>
+        <button onclick="toggleTema()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">🌓</button>
     </header>
 
-    <!-- Menú principal -->
     <nav class="main-nav">
         <a href="presupuesto.html" class="nav-card">
             <span class="icon">📋</span>
@@ -36,29 +35,106 @@
             <h3>Patrimonio Neto</h3>
             <p>Sigue tus activos y pasivos</p>
         </a>
-        <a href="configuracion.html" class="nav-card">
+        <a href="configuracion.html" class="nav-card" style="grid-column: span 2;">
             <span class="icon">⚙️</span>
             <h3>Configuración</h3>
-            <p>Ajusta tu presupuesto</p>
+            <p>Ajusta tu presupuesto, moneda, año y modo oscuro</p>
         </a>
     </nav>
 
-    <!-- Resumen rápido -->
     <section class="quick-summary">
         <div class="summary-card">
-            <span class="label">Remanente</span>
+            <span class="label">💰 Remanente</span>
             <span class="value" id="remanente">$0.00</span>
+            <small id="remanenteMsg" style="font-size:10px; color:#999;"></small>
         </div>
         <div class="summary-card">
-            <span class="label">Ahorro</span>
+            <span class="label">📈 Ahorro</span>
             <span class="value" id="ahorro">$0.00</span>
         </div>
         <div class="summary-card">
-            <span class="label">Patrimonio</span>
+            <span class="label">🏦 Patrimonio</span>
             <span class="value" id="patrimonio">$0.00</span>
         </div>
     </section>
 
+    <nav class="bottom-nav">
+        <a href="index.html" class="active"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html"><span class="icon">📊</span>Dashboard</a>
+        <a href="patrimonio.html"><span class="icon">🏦</span>Patrimonio</a>
+    </nav>
+
     <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            await cargarResumenInicio();
+            cargarTemaGuardado();
+            await cargarAnioConfigurado();
+        });
+
+        async function cargarAnioConfigurado() {
+            const anio = await window.app.obtenerConfiguracion('anio');
+            if (anio) {
+                document.getElementById('anioHeader').textContent = anio;
+            } else {
+                document.getElementById('anioHeader').textContent = new Date().getFullYear();
+            }
+        }
+
+        async function cargarResumenInicio() {
+            try {
+                const fecha = new Date();
+                const mes = fecha.getMonth() + 1;
+                const anio = await window.app.obtenerConfiguracion('anio') || fecha.getFullYear();
+                const transacciones = await window.app.obtenerTransacciones(mes, anio);
+                const presupuesto = await window.app.obtenerPresupuesto();
+                
+                const remanente = window.app.calcularRemanente(transacciones);
+                const totales = window.app.calcularTotalesPorCategoria(transacciones);
+                const ahorro = (totales.AHORROS || 0) + (totales.INVERSIONES || 0);
+                
+                const moneda = await window.app.obtenerConfiguracion('moneda') || '$';
+                
+                document.getElementById('remanente').textContent = window.app.formatearMoneda(remanente, moneda);
+                document.getElementById('remanente').className = 'value ' + (remanente >= 0 ? 'positive' : 'negative');
+                
+                const msg = document.getElementById('remanenteMsg');
+                if (remanente === 0) {
+                    msg.textContent = '✅ ¡Perfecto! Todo tu dinero tiene un trabajo.';
+                    msg.style.color = '#2e7d32';
+                } else if (remanente > 0) {
+                    msg.textContent = '💡 Te sobra dinero, ¡ahórralo o inviértelo!';
+                    msg.style.color = '#1565c0';
+                } else {
+                    msg.textContent = '⚠️ Estás gastando más de lo que ganas.';
+                    msg.style.color = '#c62828';
+                }
+                
+                document.getElementById('ahorro').textContent = window.app.formatearMoneda(ahorro, moneda);
+                document.getElementById('ahorro').className = 'value ' + (ahorro >= 0 ? 'positive' : 'negative');
+                
+                // Patrimonio (simplificado)
+                document.getElementById('patrimonio').textContent = window.app.formatearMoneda(0, moneda);
+            } catch (error) {
+                console.error('Error al cargar resumen:', error);
+            }
+        }
+
+        function cargarTemaGuardado() {
+            const tema = localStorage.getItem('tema');
+            if (tema === 'oscuro') {
+                document.body.classList.add('dark');
+            }
+        }
+
+        function toggleTema() {
+            document.body.classList.toggle('dark');
+            const tema = document.body.classList.contains('dark') ? 'oscuro' : 'claro';
+            localStorage.setItem('tema', tema);
+        }
+    </script>
 </body>
 </html>
