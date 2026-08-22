@@ -8,32 +8,57 @@
     <style>
         .config-container { padding: 16px; }
         .config-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
         }
-        .config-card h3 { font-size: 16px; margin-bottom: 12px; }
+        .config-card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .config-card h3 button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
         .config-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
         }
         .config-item:last-child { border-bottom: none; }
-        .config-item .label { font-size: 14px; color: #555; }
+        .config-item .label { font-size: 14px; color: var(--text); }
         .config-item select,
         .config-item input {
             padding: 6px 12px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 14px;
-            background: white;
+            background: var(--bg);
+            color: var(--text);
         }
+        .config-item .acciones button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+        .config-item .acciones .editar { color: var(--info); }
+        .config-item .acciones .eliminar { color: var(--danger); }
         .btn-danger {
-            background: #c62828;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -43,7 +68,7 @@
         }
         .btn-danger:active { opacity: 0.8; }
         .btn-success {
-            background: #2e7d32;
+            background: var(--primary);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -54,18 +79,6 @@
             margin-top: 8px;
         }
         .btn-success:active { opacity: 0.8; }
-        .btn-dark {
-            background: #1a1a2e;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-        }
-        .btn-dark:active { opacity: 0.8; }
         .version {
             text-align: center;
             color: #bbb;
@@ -89,7 +102,7 @@
             cursor: pointer;
         }
         .toggle-label input[type="checkbox"]:checked {
-            background: #2e7d32;
+            background: var(--primary);
         }
         .toggle-label input[type="checkbox"]::before {
             content: '';
@@ -105,6 +118,134 @@
         .toggle-label input[type="checkbox"]:checked::before {
             left: 20px;
         }
+
+        /* Estilos para el formulario de nueva subcategoría */
+        .sub-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: end;
+        }
+        .sub-form select,
+        .sub-form input {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            width: 100%;
+        }
+        .sub-form button {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .sub-form button:active { opacity: 0.8; }
+
+        .sub-lista {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .sub-lista .sub-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .sub-lista .sub-item .cat-tag {
+            font-size: 10px;
+            color: white;
+            background: var(--primary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+        .sub-lista .sub-item .acciones button {
+            background: none;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+        .sub-lista .sub-item .acciones .editar { color: var(--info); }
+        .sub-lista .sub-item .acciones .eliminar { color: var(--danger); }
+        .sub-lista .vacio {
+            text-align: center;
+            color: #999;
+            padding: 12px 0;
+            font-size: 14px;
+        }
+
+        /* Modal de edición simple */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 360px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal h4 {
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .modal .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .modal .row button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal .row .guardar {
+            background: var(--primary);
+            color: white;
+        }
+        .modal .row .cancelar {
+            background: #ccc;
+            color: #333;
+        }
+        .modal .row .guardar:active,
+        .modal .row .cancelar:active { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -153,6 +294,33 @@
             </div>
         </div>
 
+        <!-- ============ NUEVO: ADMINISTRACIÓN DE SUBCATEGORÍAS ============ -->
+        <div class="config-card">
+            <h3>
+                📋 Subcategorías
+                <button onclick="reiniciarSubcategorias()" style="font-size:12px; background:#f9a825;">↻ Restaurar</button>
+            </h3>
+            
+            <!-- Formulario para agregar nueva -->
+            <div class="sub-form">
+                <select id="subCategoriaSelect">
+                    <option value="INGRESOS">💰 Ingresos</option>
+                    <option value="GASTOS_ESENCIALES">🏠 Gastos Esenciales</option>
+                    <option value="GASTOS_DISCRECIONALES">🎮 Gastos Discrecionales</option>
+                    <option value="PAGO_DEUDAS">💳 Pago Deudas</option>
+                    <option value="AHORROS">🏦 Ahorros</option>
+                    <option value="INVERSIONES">📈 Inversiones</option>
+                </select>
+                <input type="text" id="subNombreInput" placeholder="Nombre de la subcategoría">
+                <button onclick="agregarSubcategoria()">➕ Agregar</button>
+            </div>
+
+            <!-- Lista de subcategorías -->
+            <div class="sub-lista" id="subLista">
+                <div class="vacio">Cargando...</div>
+            </div>
+        </div>
+
         <!-- Datos -->
         <div class="config-card">
             <h3>💾 Datos</h3>
@@ -166,7 +334,7 @@
                 <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importarDatos(event)">
             </div>
             <div class="config-item" style="border-bottom: none;">
-                <span class="label" style="color:#c62828;">Eliminar todos los datos</span>
+                <span class="label" style="color:var(--danger);">Eliminar todos los datos</span>
                 <button class="btn-danger" onclick="eliminarTodosLosDatos()">🗑️ Eliminar</button>
             </div>
         </div>
@@ -176,6 +344,19 @@
 
         <div class="version">
             Presupuesto PWA v2.0
+        </div>
+    </div>
+
+    <!-- Modal para editar subcategoría -->
+    <div class="modal-overlay" id="editSubModal">
+        <div class="modal">
+            <h4>✏️ Editar subcategoría</h4>
+            <input type="text" id="editSubNombre" placeholder="Nuevo nombre">
+            <div class="row">
+                <button class="guardar" onclick="guardarEdicionSub()">💾 Guardar</button>
+                <button class="cancelar" onclick="cerrarModal()">❌ Cancelar</button>
+            </div>
+            <input type="hidden" id="editSubId">
         </div>
     </div>
 
@@ -189,26 +370,26 @@
 
     <script src="app.js"></script>
     <script>
+        let subcategorias = [];
+        let editandoId = null;
+
         document.addEventListener('DOMContentLoaded', async () => {
             await window.app.abrirDB();
             await cargarConfiguracion();
+            await cargarSubcategorias();
+            await window.app.inicializarSubcategorias(); // Si no hay, crea las default
+            await cargarSubcategorias();
         });
 
+        // ============ CONFIGURACIÓN ============
         async function cargarConfiguracion() {
             const moneda = await window.app.obtenerConfiguracion('moneda');
             const anio = await window.app.obtenerConfiguracion('anio');
             
-            if (moneda) {
-                document.getElementById('monedaSelect').value = moneda;
-            }
-            
-            if (anio) {
-                document.getElementById('anioInput').value = anio;
-            } else {
-                document.getElementById('anioInput').value = new Date().getFullYear();
-            }
+            if (moneda) document.getElementById('monedaSelect').value = moneda;
+            if (anio) document.getElementById('anioInput').value = anio;
+            else document.getElementById('anioInput').value = new Date().getFullYear();
 
-            // Modo oscuro
             const tema = localStorage.getItem('tema');
             if (tema === 'oscuro') {
                 document.getElementById('darkModeToggle').checked = true;
@@ -222,7 +403,6 @@
 
             await window.app.guardarConfiguracion('moneda', moneda);
             await window.app.guardarConfiguracion('anio', anio);
-
             localStorage.setItem('moneda', moneda);
 
             alert('✅ Configuración guardada correctamente');
@@ -239,8 +419,153 @@
             }
         }
 
+        // ============ SUBCATEGORÍAS ============
+        async function cargarSubcategorias() {
+            subcategorias = await window.app.obtenerSubcategorias();
+            renderizarSubcategorias();
+        }
+
+        function renderizarSubcategorias() {
+            const container = document.getElementById('subLista');
+            
+            if (subcategorias.length === 0) {
+                container.innerHTML = '<div class="vacio">No hay subcategorías. Agrega una arriba.</div>';
+                return;
+            }
+
+            // Agrupar por categoría
+            const categorias = {};
+            subcategorias.forEach(s => {
+                if (!categorias[s.categoria]) categorias[s.categoria] = [];
+                categorias[s.categoria].push(s);
+            });
+
+            let html = '';
+            const emojis = {
+                'INGRESOS': '💰',
+                'GASTOS_ESENCIALES': '🏠',
+                'GASTOS_DISCRECIONALES': '🎮',
+                'PAGO_DEUDAS': '💳',
+                'AHORROS': '🏦',
+                'INVERSIONES': '📈'
+            };
+            const nombres = {
+                'INGRESOS': 'Ingresos',
+                'GASTOS_ESENCIALES': 'Gastos Esenciales',
+                'GASTOS_DISCRECIONALES': 'Gastos Discrecionales',
+                'PAGO_DEUDAS': 'Pago Deudas',
+                'AHORROS': 'Ahorros',
+                'INVERSIONES': 'Inversiones'
+            };
+
+            for (const cat in categorias) {
+                html += `<div style="font-weight:600; font-size:13px; color:#999; margin-top:8px; border-bottom:1px solid var(--border); padding-bottom:4px;">${emojis[cat] || '📌'} ${nombres[cat] || cat}</div>`;
+                categorias[cat].forEach(s => {
+                    html += `
+                        <div class="sub-item">
+                            <span>${s.nombre}</span>
+                            <span class="acciones">
+                                <button class="editar" onclick="abrirModalEditar(${s.id}, '${s.nombre}')">✏️</button>
+                                <button class="eliminar" onclick="eliminarSubcategoria(${s.id})">🗑️</button>
+                            </span>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function agregarSubcategoria() {
+            const categoria = document.getElementById('subCategoriaSelect').value;
+            const nombre = document.getElementById('subNombreInput').value.trim();
+            
+            if (!nombre) {
+                alert('Por favor ingresa un nombre para la subcategoría');
+                return;
+            }
+
+            // Verificar si ya existe
+            const existe = subcategorias.some(s => s.nombre.toLowerCase() === nombre.toLowerCase());
+            if (existe) {
+                alert('⚠️ Esta subcategoría ya existe');
+                return;
+            }
+
+            await window.app.guardarSubcategoria(categoria, nombre, 0);
+            document.getElementById('subNombreInput').value = '';
+            await cargarSubcategorias();
+            alert('✅ Subcategoría agregada correctamente');
+        }
+
+        function abrirModalEditar(id, nombreActual) {
+            editandoId = id;
+            document.getElementById('editSubId').value = id;
+            document.getElementById('editSubNombre').value = nombreActual;
+            document.getElementById('editSubModal').classList.add('active');
+        }
+
+        function cerrarModal() {
+            document.getElementById('editSubModal').classList.remove('active');
+            editandoId = null;
+        }
+
+        async function guardarEdicionSub() {
+            const id = parseInt(document.getElementById('editSubId').value);
+            const nuevoNombre = document.getElementById('editSubNombre').value.trim();
+            
+            if (!nuevoNombre) {
+                alert('El nombre no puede estar vacío');
+                return;
+            }
+
+            const item = subcategorias.find(s => s.id === id);
+            if (!item) return;
+
+            // Verificar que no exista otra con el mismo nombre
+            const existe = subcategorias.some(s => s.id !== id && s.nombre.toLowerCase() === nuevoNombre.toLowerCase());
+            if (existe) {
+                alert('⚠️ Ya existe una subcategoría con ese nombre');
+                return;
+            }
+
+            // Eliminar la antigua y crear la nueva
+            await window.app.eliminarSubcategoria(id);
+            await window.app.guardarSubcategoria(item.categoria, nuevoNombre, item.monto || 0);
+            
+            cerrarModal();
+            await cargarSubcategorias();
+            alert('✅ Subcategoría actualizada correctamente');
+        }
+
+        async function eliminarSubcategoria(id) {
+            const item = subcategorias.find(s => s.id === id);
+            if (!item) return;
+            
+            if (!confirm(`¿Eliminar la subcategoría "${item.nombre}"? Esto eliminará también su presupuesto asociado.`)) return;
+            
+            await window.app.eliminarSubcategoria(id);
+            await cargarSubcategorias();
+            alert('🗑️ Subcategoría eliminada');
+        }
+
+        async function reiniciarSubcategorias() {
+            if (!confirm('⚠️ Esto restaurará todas las subcategorías a los valores predeterminados. ¿Continuar?')) return;
+            
+            // Eliminar todas las subcategorías existentes
+            for (const s of subcategorias) {
+                await window.app.eliminarSubcategoria(s.id);
+            }
+            
+            // Inicializar con las predeterminadas
+            await window.app.inicializarSubcategorias();
+            await cargarSubcategorias();
+            alert('✅ Subcategorías restauradas correctamente');
+        }
+
+        // ============ DATOS ============
         async function exportarDatos() {
-            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readonly');
+            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio', 'subcategorias'], 'readonly');
             
             const presupuesto = await new Promise(resolve => {
                 const req = tx.objectStore('presupuesto').getAll();
@@ -257,7 +582,12 @@
                 req.onsuccess = () => resolve(req.result);
             });
 
-            const data = { presupuesto, transacciones, patrimonio };
+            const subcategorias = await new Promise(resolve => {
+                const req = tx.objectStore('subcategorias').getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+
+            const data = { presupuesto, transacciones, patrimonio, subcategorias };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -278,11 +608,12 @@
                     
                     if (!confirm('⚠️ Esto sobrescribirá todos tus datos actuales. ¿Continuar?')) return;
 
-                    const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readwrite');
+                    const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio', 'subcategorias'], 'readwrite');
                     
                     tx.objectStore('presupuesto').clear();
                     tx.objectStore('transacciones').clear();
                     tx.objectStore('patrimonio').clear();
+                    tx.objectStore('subcategorias').clear();
 
                     if (data.presupuesto) {
                         data.presupuesto.forEach(item => tx.objectStore('presupuesto').add(item));
@@ -292,6 +623,9 @@
                     }
                     if (data.patrimonio) {
                         data.patrimonio.forEach(item => tx.objectStore('patrimonio').add(item));
+                    }
+                    if (data.subcategorias) {
+                        data.subcategorias.forEach(item => tx.objectStore('subcategorias').add(item));
                     }
 
                     alert('✅ Datos importados correctamente');
@@ -304,13 +638,14 @@
         }
 
         async function eliminarTodosLosDatos() {
-            if (!confirm('⚠️ ¿Estás SEGURO? Esto eliminará TODOS tus datos (presupuesto, transacciones y patrimonio). Esta acción no se puede deshacer.')) return;
+            if (!confirm('⚠️ ¿Estás SEGURO? Esto eliminará TODOS tus datos (presupuesto, transacciones, patrimonio y subcategorías). Esta acción no se puede deshacer.')) return;
             if (!confirm('⚠️ Última advertencia: ¿Realmente quieres eliminar todo?')) return;
 
-            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readwrite');
+            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio', 'subcategorias'], 'readwrite');
             tx.objectStore('presupuesto').clear();
             tx.objectStore('transacciones').clear();
             tx.objectStore('patrimonio').clear();
+            tx.objectStore('subcategorias').clear();
 
             alert('🗑️ Todos los datos han sido eliminados');
             location.reload();
