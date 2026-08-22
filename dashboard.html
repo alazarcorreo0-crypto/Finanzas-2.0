@@ -82,4 +82,176 @@
             align-items: center;
         }
         .selector-anio select {
-            padding:
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="color:white; text-decoration:none; font-size:20px;">←</a>
+        <h1>📊 Dashboard Anual</h1>
+        <span class="year" id="anioDisplay">2025</span>
+    </header>
+
+    <div class="selector-anio">
+        <button onclick="cambiarAnioDashboard(-1)" style="padding:6px 12px; background:#ddd; border:none; border-radius:8px; font-size:16px;">◀</button>
+        <select id="selectorAnioDashboard" onchange="cargarDashboardPorAnio(this.value)">
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+        </select>
+        <button onclick="cambiarAnioDashboard(1)" style="padding:6px 12px; background:#ddd; border:none; border-radius:8px; font-size:16px;">▶</button>
+    </div>
+
+    <div class="dashboard-container" id="dashboardContent">
+        <div class="no-data">Cargando datos...</div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html" class="active"><span class="icon">📊</span>Dashboard</a>
+        <a href="patrimonio.html"><span class="icon">🏦</span>Patrimonio</a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        let anioDashboard = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            const anioConfig = await window.app.obtenerConfiguracion('anio');
+            if (anioConfig) anioDashboard = parseInt(anioConfig);
+            document.getElementById('selectorAnioDashboard').value = anioDashboard;
+            await cargarDashboard(anioDashboard);
+        });
+
+        async function cargarDashboard(anio) {
+            const container = document.getElementById('dashboardContent');
+            document.getElementById('anioDisplay').textContent = anio;
+
+            const meses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            const nombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            let totalIngresosAnual = 0;
+            let totalGastosAnual = 0;
+            let totalAhorroAnual = 0;
+            let datosMensuales = [];
+            const moneda = await window.app.obtenerConfiguracion('moneda') || '$';
+
+            for (let i = 0; i < meses.length; i++) {
+                const trans = await window.app.obtenerTransacciones(meses[i], anio);
+                const totales = window.app.calcularTotalesPorCategoria(trans);
+                const ingresos = totales.INGRESOS || 0;
+                const gastos = (totales.GASTOS_ESENCIALES || 0) + 
+                              (totales.GASTOS_DISCRECIONALES || 0) + 
+                              (totales.PAGO_DEUDAS || 0);
+                const ahorro = (totales.AHORROS || 0) + (totales.INVERSIONES || 0);
+                const remanente = ingresos - gastos - ahorro;
+
+                datosMensuales.push({ mes: meses[i], ingresos, gastos, ahorro, remanente });
+                totalIngresosAnual += ingresos;
+                totalGastosAnual += gastos;
+                totalAhorroAnual += ahorro;
+            }
+
+            const remanenteAnual = totalIngresosAnual - totalGastosAnual - totalAhorroAnual;
+            const tasaAhorro = totalIngresosAnual > 0 ? (totalAhorroAnual / totalIngresosAnual * 100) : 0;
+
+            // Verificar si hay datos
+            const tieneDatos = datosMensuales.some(d => d.ingresos > 0 || d.gastos > 0);
+
+            if (!tieneDatos) {
+                container.innerHTML = `
+                    <div class="dashboard-card">
+                        <h3>📊 Dashboard</h3>
+                        <p style="color:#999; text-align:center; padding:20px;">
+                            Aún no hay transacciones registradas para el año ${anio}.<br>
+                            Ve a <strong>Transacciones</strong> y agrega tus gastos.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Tarjetas de resumen
+            html += `
+                <div class="dashboard-grid">
+                    <div class="stat-item">
+                        <span class="label">💰 Ingresos</span>
+                        <span class="number income">${window.app.formatearMoneda(totalIngresosAnual, moneda)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">💸 Gastos</span>
+                        <span class="number expense">${window.app.formatearMoneda(totalGastosAnual, moneda)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">📈 Ahorro</span>
+                        <span class="number savings">${window.app.formatearMoneda(totalAhorroAnual, moneda)} (${tasaAhorro.toFixed(1)}%)</span>
+                    </div>
+                </div>
+            `;
+
+            // Remanente anual
+            html += `
+                <div class="dashboard-card">
+                    <h3>📊 Remanente Anual</h3>
+                    <div class="value ${remanenteAnual >= 0 ? 'positive' : 'negative'}">
+                        ${window.app.formatearMoneda(remanenteAnual, moneda)}
+                    </div>
+                    <small style="color:#999;">
+                        ${remanenteAnual >= 0 ? '✅ ¡Excelente! Todo tu dinero tiene un trabajo.' : '⚠️ Estás gastando más de lo que ingresas.'}
+                    </small>
+                </div>
+            `;
+
+            // Tabla mensual
+            html += `
+                <div class="dashboard-card">
+                    <h3>📅 Resumen Mensual</h3>
+                    <div class="month-row header">
+                        <span>Mes</span>
+                        <span>Ingresos</span>
+                        <span>Gastos</span>
+                        <span>Ahorro</span>
+                        <span>Remanente</span>
+                    </div>
+            `;
+
+            datosMensuales.forEach(d => {
+                const rem = d.ingresos - d.gastos - d.ahorro;
+                html += `
+                    <div class="month-row">
+                        <span class="month-name">${nombres[d.mes - 1]}</span>
+                        <span class="amount income">${window.app.formatearMoneda(d.ingresos, moneda)}</span>
+                        <span class="amount expense">${window.app.formatearMoneda(d.gastos, moneda)}</span>
+                        <span class="amount savings">${window.app.formatearMoneda(d.ahorro, moneda)}</span>
+                        <span class="amount remanente" style="color: ${rem >= 0 ? '#2e7d32' : '#c62828'}">
+                            ${window.app.formatearMoneda(rem, moneda)}
+                        </span>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function cambiarAnioDashboard(delta) {
+            anioDashboard += delta;
+            document.getElementById('selectorAnioDashboard').value = anioDashboard;
+            cargarDashboard(anioDashboard);
+        }
+
+        function cargarDashboardPorAnio(anio) {
+            anioDashboard = parseInt(anio);
+            cargarDashboard(anioDashboard);
+        }
+    </script>
+</body>
+</html>
