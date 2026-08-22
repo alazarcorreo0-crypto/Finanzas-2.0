@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+    <title>Configuración</title>
+    <style>
+        .config-container {
+            padding: 16px;
+        }
+        .config-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .config-card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .config-item:last-child {
+            border-bottom: none;
+        }
+        .config-item .label {
+            font-size: 14px;
+            color: #555;
+        }
+        .config-item select,
+        .config-item input {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        .btn-danger {
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-danger:active {
+            opacity: 0.8;
+        }
+        .btn-success {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-success:active {
+            opacity: 0.8;
+        }
+        .version {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" style="color:white; text-decoration:none; font-size:20px;">←</a>
+        <h1>⚙️ Configuración</h1>
+        <span class="year">Ajustes</span>
+    </header>
+
+    <div class="config-container">
+        <!-- Moneda -->
+        <div class="config-card">
+            <h3>💰 Moneda</h3>
+            <div class="config-item">
+                <span class="label">Símbolo de moneda</span>
+                <select id="monedaSelect">
+                    <option value="$">$ (Dólar)</option>
+                    <option value="€">€ (Euro)</option>
+                    <option value="£">£ (Libra)</option>
+                    <option value="MX$">MX$ (Peso Mexicano)</option>
+                    <option value="COP$">COP$ (Peso Colombiano)</option>
+                    <option value="ARS$">ARS$ (Peso Argentino)</option>
+                    <option value="CLP$">CLP$ (Peso Chileno)</option>
+                    <option value="S/.">S/. (Sol Peruano)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Año -->
+        <div class="config-card">
+            <h3>📅 Año presupuestal</h3>
+            <div class="config-item">
+                <span class="label">Año actual</span>
+                <input type="number" id="anioInput" min="2020" max="2030">
+            </div>
+        </div>
+
+        <!-- Datos -->
+        <div class="config-card">
+            <h3>💾 Datos</h3>
+            <div class="config-item">
+                <span class="label">Exportar datos (JSON)</span>
+                <button onclick="exportarDatos()" style="background:#1565c0; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">📤 Exportar</button>
+            </div>
+            <div class="config-item">
+                <span class="label">Importar datos (JSON)</span>
+                <button onclick="document.getElementById('importInput').click()" style="background:#f9a825; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">📥 Importar</button>
+                <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importarDatos(event)">
+            </div>
+            <div class="config-item" style="border-bottom: none;">
+                <span class="label" style="color:#c62828;">Eliminar todos los datos</span>
+                <button class="btn-danger" onclick="eliminarTodosLosDatos()">🗑️ Eliminar</button>
+            </div>
+        </div>
+
+        <!-- Guardar -->
+        <button class="btn-success" onclick="guardarConfiguracion()">💾 Guardar Configuración</button>
+
+        <div class="version">
+            Presupuesto PWA v1.0
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
+        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
+        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
+        <a href="dashboard.html"><span class="icon">📊</span>Dashboard</a>
+        <a href="configuracion.html" class="active"><span class="icon">⚙️</span>Config</a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.app.abrirDB();
+            await cargarConfiguracion();
+        });
+
+        async function cargarConfiguracion() {
+            const tx = window.app.db.transaction('configuracion', 'readonly');
+            const store = tx.objectStore('configuracion');
+            
+            // Moneda
+            const monedaReq = store.get('moneda');
+            monedaReq.onsuccess = () => {
+                if (monedaReq.result) {
+                    document.getElementById('monedaSelect').value = monedaReq.result.value;
+                }
+            };
+
+            // Año
+            const anioReq = store.get('anio');
+            anioReq.onsuccess = () => {
+                if (anioReq.result) {
+                    document.getElementById('anioInput').value = anioReq.result.value;
+                } else {
+                    document.getElementById('anioInput').value = new Date().getFullYear();
+                }
+            };
+        }
+
+        async function guardarConfiguracion() {
+            const moneda = document.getElementById('monedaSelect').value;
+            const anio = parseInt(document.getElementById('anioInput').value);
+
+            const tx = window.app.db.transaction('configuracion', 'readwrite');
+            const store = tx.objectStore('configuracion');
+            
+            store.put({ key: 'moneda', value: moneda });
+            store.put({ key: 'anio', value: anio });
+
+            alert('✅ Configuración guardada correctamente');
+        }
+
+        async function exportarDatos() {
+            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readonly');
+            
+            const presupuesto = await new Promise(resolve => {
+                const req = tx.objectStore('presupuesto').getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+            
+            const transacciones = await new Promise(resolve => {
+                const req = tx.objectStore('transacciones').getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+            
+            const patrimonio = await new Promise(resolve => {
+                const req = tx.objectStore('patrimonio').getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+
+            const data = { presupuesto, transacciones, patrimonio };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `presupuesto_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function importarDatos(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!confirm('⚠️ Esto sobrescribirá todos tus datos actuales. ¿Continuar?')) return;
+
+                    const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readwrite');
+                    
+                    // Limpiar datos existentes
+                    tx.objectStore('presupuesto').clear();
+                    tx.objectStore('transacciones').clear();
+                    tx.objectStore('patrimonio').clear();
+
+                    // Importar nuevos datos
+                    if (data.presupuesto) {
+                        data.presupuesto.forEach(item => tx.objectStore('presupuesto').add(item));
+                    }
+                    if (data.transacciones) {
+                        data.transacciones.forEach(item => tx.objectStore('transacciones').add(item));
+                    }
+                    if (data.patrimonio) {
+                        data.patrimonio.forEach(item => tx.objectStore('patrimonio').add(item));
+                    }
+
+                    alert('✅ Datos importados correctamente');
+                    location.reload();
+                } catch (error) {
+                    alert('❌ Error al importar: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function eliminarTodosLosDatos() {
+            if (!confirm('⚠️ ¿Estás SEGURO? Esto eliminará TODOS tus datos (presupuesto, transacciones y patrimonio). Esta acción no se puede deshacer.')) return;
+            if (!confirm('⚠️ Última advertencia: ¿Realmente quieres eliminar todo?')) return;
+
+            const tx = window.app.db.transaction(['presupuesto', 'transacciones', 'patrimonio'], 'readwrite');
+            tx.objectStore('presupuesto').clear();
+            tx.objectStore('transacciones').clear();
+            tx.objectStore('patrimonio').clear();
+
+            alert('🗑️ Todos los datos han sido eliminados');
+            location.reload();
+        }
+    </script>
+</body>
+</html>
