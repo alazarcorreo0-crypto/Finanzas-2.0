@@ -1,4 +1,4 @@
-const CACHE_NAME = 'presupuesto-v1';
+const CACHE_NAME = 'presupuesto-v2';
 const urlsToCache = [
     'index.html',
     'presupuesto.html',
