@@ -2,10 +2,9 @@
 // CONFIGURACIÓN INICIAL
 // ============================================
 const DB_NAME = 'PresupuestoDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db = null;
 
-// Estructura de datos
 const CATEGORIAS = {
     INGRESOS: 'INGRESOS',
     GASTOS_ESENCIALES: 'GASTOS_ESENCIALES',
@@ -31,14 +30,12 @@ function abrirDB() {
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             
-            // Store: Presupuesto
             if (!db.objectStoreNames.contains('presupuesto')) {
                 const store = db.createObjectStore('presupuesto', { keyPath: 'id', autoIncrement: true });
                 store.createIndex('categoria', 'categoria', { unique: false });
                 store.createIndex('subcategoria', 'subcategoria', { unique: false });
             }
             
-            // Store: Transacciones
             if (!db.objectStoreNames.contains('transacciones')) {
                 const store = db.createObjectStore('transacciones', { keyPath: 'id', autoIncrement: true });
                 store.createIndex('mes', 'mes', { unique: false });
@@ -47,14 +44,12 @@ function abrirDB() {
                 store.createIndex('subcategoria', 'subcategoria', { unique: false });
             }
             
-            // Store: Patrimonio
             if (!db.objectStoreNames.contains('patrimonio')) {
                 const store = db.createObjectStore('patrimonio', { keyPath: 'id', autoIncrement: true });
                 store.createIndex('mes', 'mes', { unique: false });
                 store.createIndex('tipo', 'tipo', { unique: false });
             }
             
-            // Store: Configuración
             if (!db.objectStoreNames.contains('configuracion')) {
                 db.createObjectStore('configuracion', { keyPath: 'key' });
             }
@@ -63,55 +58,74 @@ function abrirDB() {
 }
 
 // ============================================
+// CONFIGURACIÓN
+// ============================================
+async function guardarConfiguracion(key, value) {
+    const tx = db.transaction('configuracion', 'readwrite');
+    const store = tx.objectStore('configuracion');
+    return new Promise((resolve, reject) => {
+        const req = store.put({ key, value });
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function obtenerConfiguracion(key) {
+    const tx = db.transaction('configuracion', 'readonly');
+    const store = tx.objectStore('configuracion');
+    return new Promise((resolve, reject) => {
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result ? req.result.value : null);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// ============================================
 // FUNCIONES CRUD (Presupuesto)
 // ============================================
 async function guardarPresupuesto(categoria, subcategoria, monto) {
-    const transaction = db.transaction('presupuesto', 'readwrite');
-    const store = transaction.objectStore('presupuesto');
-    
-    // Verificar si ya existe
+    const tx = db.transaction('presupuesto', 'readwrite');
+    const store = tx.objectStore('presupuesto');
     const index = store.index('subcategoria');
-    const request = index.get(subcategoria);
     
     return new Promise((resolve, reject) => {
-        request.onsuccess = () => {
-            const existing = request.result;
+        const req = index.get(subcategoria);
+        req.onsuccess = () => {
+            const existing = req.result;
             if (existing) {
-                // Actualizar
                 existing.monto = monto;
-                const updateRequest = store.put(existing);
-                updateRequest.onsuccess = () => resolve(updateRequest.result);
-                updateRequest.onerror = () => reject(updateRequest.error);
+                const updateReq = store.put(existing);
+                updateReq.onsuccess = () => resolve(updateReq.result);
+                updateReq.onerror = () => reject(updateReq.error);
             } else {
-                // Crear nuevo
                 const newItem = { categoria, subcategoria, monto };
-                const addRequest = store.add(newItem);
-                addRequest.onsuccess = () => resolve(addRequest.result);
-                addRequest.onerror = () => reject(addRequest.error);
+                const addReq = store.add(newItem);
+                addReq.onsuccess = () => resolve(addReq.result);
+                addReq.onerror = () => reject(addReq.error);
             }
         };
-        request.onerror = () => reject(request.error);
+        req.onerror = () => reject(req.error);
     });
 }
 
 async function obtenerPresupuesto() {
-    const transaction = db.transaction('presupuesto', 'readonly');
-    const store = transaction.objectStore('presupuesto');
+    const tx = db.transaction('presupuesto', 'readonly');
+    const store = tx.objectStore('presupuesto');
     return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
     });
 }
 
 async function obtenerPresupuestoPorCategoria(categoria) {
-    const transaction = db.transaction('presupuesto', 'readonly');
-    const store = transaction.objectStore('presupuesto');
+    const tx = db.transaction('presupuesto', 'readonly');
+    const store = tx.objectStore('presupuesto');
     const index = store.index('categoria');
     return new Promise((resolve, reject) => {
-        const request = index.getAll(categoria);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const req = index.getAll(categoria);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
     });
 }
 
@@ -119,37 +133,41 @@ async function obtenerPresupuestoPorCategoria(categoria) {
 // FUNCIONES CRUD (Transacciones)
 // ============================================
 async function guardarTransaccion({ mes, anio, categoria, subcategoria, fecha, monto, notas, revisado }) {
-    const transaction = db.transaction('transacciones', 'readwrite');
-    const store = transaction.objectStore('transacciones');
-    const newItem = { mes, anio, categoria, subcategoria, fecha, monto, notas, revisado: revisado || false };
+    const tx = db.transaction('transacciones', 'readwrite');
+    const store = tx.objectStore('transacciones');
+    const newItem = { 
+        mes, anio, categoria, subcategoria, fecha, monto, 
+        notas: notas || '', 
+        revisado: revisado || false 
+    };
     return new Promise((resolve, reject) => {
-        const request = store.add(newItem);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const req = store.add(newItem);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
     });
 }
 
 async function obtenerTransacciones(mes, anio) {
-    const transaction = db.transaction('transacciones', 'readonly');
-    const store = transaction.objectStore('transacciones');
+    const tx = db.transaction('transacciones', 'readonly');
+    const store = tx.objectStore('transacciones');
     const index = store.index('mes');
     return new Promise((resolve, reject) => {
-        const request = index.getAll(mes);
-        request.onsuccess = () => {
-            const resultados = request.result.filter(t => t.anio === anio);
+        const req = index.getAll(mes);
+        req.onsuccess = () => {
+            const resultados = req.result.filter(t => t.anio === anio);
             resolve(resultados);
         };
-        request.onerror = () => reject(request.error);
+        req.onerror = () => reject(req.error);
     });
 }
 
 async function eliminarTransaccion(id) {
-    const transaction = db.transaction('transacciones', 'readwrite');
-    const store = transaction.objectStore('transacciones');
+    const tx = db.transaction('transacciones', 'readwrite');
+    const store = tx.objectStore('transacciones');
     return new Promise((resolve, reject) => {
-        const request = store.delete(id);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
     });
 }
 
@@ -157,24 +175,34 @@ async function eliminarTransaccion(id) {
 // FUNCIONES CRUD (Patrimonio)
 // ============================================
 async function guardarPatrimonio({ mes, tipo, subcategoria, monto }) {
-    const transaction = db.transaction('patrimonio', 'readwrite');
-    const store = transaction.objectStore('patrimonio');
+    const tx = db.transaction('patrimonio', 'readwrite');
+    const store = tx.objectStore('patrimonio');
     const newItem = { mes, tipo, subcategoria, monto };
     return new Promise((resolve, reject) => {
-        const request = store.add(newItem);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const req = store.add(newItem);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
     });
 }
 
 async function obtenerPatrimonio(mes) {
-    const transaction = db.transaction('patrimonio', 'readonly');
-    const store = transaction.objectStore('patrimonio');
+    const tx = db.transaction('patrimonio', 'readonly');
+    const store = tx.objectStore('patrimonio');
     const index = store.index('mes');
     return new Promise((resolve, reject) => {
-        const request = index.getAll(mes);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        const req = index.getAll(mes);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function eliminarPatrimonio(id) {
+    const tx = db.transaction('patrimonio', 'readwrite');
+    const store = tx.objectStore('patrimonio');
+    return new Promise((resolve, reject) => {
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
     });
 }
 
@@ -228,107 +256,13 @@ function obtenerNombreMes(mes) {
 }
 
 // ============================================
-// INICIALIZACIÓN
-// ============================================
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await abrirDB();
-        console.log('Base de datos inicializada correctamente');
-        
-        // Cargar datos predeterminados si es la primera vez
-        const configStore = db.transaction('configuracion', 'readonly').objectStore('configuracion');
-        const initRequest = configStore.get('inicializado');
-        initRequest.onsuccess = async () => {
-            if (!initRequest.result) {
-                await cargarDatosIniciales();
-                const tx = db.transaction('configuracion', 'readwrite');
-                tx.objectStore('configuracion').put({ key: 'inicializado', value: true });
-            }
-        };
-        
-        // Actualizar resumen en index.html
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-            actualizarResumenInicio();
-        }
-        
-    } catch (error) {
-        console.error('Error al inicializar:', error);
-    }
-});
-
-async function cargarDatosIniciales() {
-    // Datos de ejemplo para el presupuesto
-    const presupuestoInicial = [
-        { categoria: 'INGRESOS', subcategoria: 'Sueldo', monto: 3200 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Renta', monto: 1025 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Super', monto: 200 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Aseguranza carro', monto: 95 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Celular', monto: 104 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Gasolina', monto: 100 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Laptop', monto: 50 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Internet', monto: 70 },
-        { categoria: 'GASTOS_ESENCIALES', subcategoria: 'Mama', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'Gastos variables', monto: 100 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Free', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Aeroméxico', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC América express', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Nu', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Volaris Invex', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Mercado Pago', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'Tj Maxx', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Discovery', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC Gap', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'After Pay', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'Taxes', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'TC AE $', monto: 0 },
-        { categoria: 'GASTOS_DISCRECIONALES', subcategoria: 'LUZ HERMISTON', monto: 0 },
-        { categoria: 'PAGO_DEUDAS', subcategoria: 'Solares', monto: 550 },
-        { categoria: 'PAGO_DEUDAS', subcategoria: 'Abono extra solar', monto: 0 },
-        { categoria: 'AHORROS', subcategoria: 'Ahorro USA', monto: 400 },
-        { categoria: 'AHORROS', subcategoria: 'Ahorro MX', monto: 400 },
-        { categoria: 'INVERSIONES', subcategoria: '', monto: 0 }
-    ];
-    
-    const tx = db.transaction('presupuesto', 'readwrite');
-    const store = tx.objectStore('presupuesto');
-    presupuestoInicial.forEach(item => {
-        store.add(item);
-    });
-    
-    console.log('Datos iniciales cargados');
-}
-
-async function actualizarResumenInicio() {
-    try {
-        const mesActual = new Date().getMonth() + 1;
-        const anioActual = new Date().getFullYear();
-        const transacciones = await obtenerTransacciones(mesActual, anioActual);
-        const presupuesto = await obtenerPresupuesto();
-        
-        const remanente = calcularRemanente(transacciones);
-        const totales = calcularTotalesPorCategoria(transacciones);
-        const ahorro = (totales['AHORROS'] || 0) + (totales['INVERSIONES'] || 0);
-        
-        document.getElementById('remanente').textContent = formatearMoneda(remanente);
-        document.getElementById('ahorro').textContent = formatearMoneda(ahorro);
-        
-        // Patrimonio
-        const activos = await obtenerPatrimonio(mesActual);
-        const pasivos = await obtenerPatrimonio(mesActual + 100); // hack para separar
-        const patrimonio = calcularPatrimonioNeto(activos, pasivos);
-        document.getElementById('patrimonio').textContent = formatearMoneda(patrimonio);
-        
-    } catch (error) {
-        console.error('Error al actualizar resumen:', error);
-    }
-}
-
-// ============================================
-// EXPORTAR PARA USO EN OTRAS PÁGINAS
+// EXPORTAR
 // ============================================
 window.app = {
     db,
     abrirDB,
+    guardarConfiguracion,
+    obtenerConfiguracion,
     guardarPresupuesto,
     obtenerPresupuesto,
     obtenerPresupuestoPorCategoria,
@@ -337,6 +271,7 @@ window.app = {
     eliminarTransaccion,
     guardarPatrimonio,
     obtenerPatrimonio,
+    eliminarPatrimonio,
     calcularTotalesPorCategoria,
     calcularRemanente,
     calcularPatrimonioNeto,
