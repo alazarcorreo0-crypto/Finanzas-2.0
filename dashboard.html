@@ -6,9 +6,7 @@
     <link rel="stylesheet" href="styles.css">
     <title>Dashboard Anual</title>
     <style>
-        .dashboard-container {
-            padding: 12px 16px;
-        }
+        .dashboard-container { padding: 12px 16px; }
         .dashboard-card {
             background: white;
             border-radius: 12px;
@@ -33,10 +31,11 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
+            margin-bottom: 12px;
         }
         .stat-item {
             text-align: center;
-            padding: 8px;
+            padding: 10px;
             border-radius: 8px;
             background: #f8f9fa;
         }
@@ -53,12 +52,11 @@
         .stat-item .number.income { color: #2e7d32; }
         .stat-item .number.expense { color: #c62828; }
         .stat-item .number.savings { color: #1565c0; }
-
         .month-row {
             display: grid;
-            grid-template-columns: 80px repeat(4, 1fr);
+            grid-template-columns: 70px repeat(4, 1fr);
             gap: 4px;
-            padding: 8px 0;
+            padding: 6px 0;
             border-bottom: 1px solid #f0f0f0;
             font-size: 13px;
             align-items: center;
@@ -70,59 +68,18 @@
             text-transform: uppercase;
             border-bottom: 2px solid #ddd;
         }
-        .month-row .month-name {
-            font-weight: 500;
-        }
-        .month-row .amount {
-            text-align: right;
-        }
+        .month-row .month-name { font-weight: 500; }
+        .month-row .amount { text-align: right; font-size: 12px; }
         .month-row .amount.income { color: #2e7d32; }
         .month-row .amount.expense { color: #c62828; }
         .month-row .amount.remanente { font-weight: 600; }
-        .no-data {
-            text-align: center;
-            color: #999;
-            padding: 30px 0;
-            font-size: 14px;
+        .no-data { text-align: center; color: #999; padding: 30px 0; font-size: 14px; }
+        .selector-anio {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 8px 16px;
+            align-items: center;
         }
-    </style>
-</head>
-<body>
-    <header class="header">
-        <a href="index.html" style="color:white; text-decoration:none; font-size:20px;">←</a>
-        <h1>📊 Dashboard Anual</h1>
-        <span class="year" id="anioDisplay">2025</span>
-    </header>
-
-    <div class="dashboard-container" id="dashboardContent">
-        <div class="no-data">Cargando datos...</div>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="index.html"><span class="icon">🏠</span>Inicio</a>
-        <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
-        <a href="transacciones.html"><span class="icon">💳</span>Gastos</a>
-        <a href="dashboard.html" class="active"><span class="icon">📊</span>Dashboard</a>
-        <a href="patrimonio.html"><span class="icon">🏦</span>Patrimonio</a>
-    </nav>
-
-    <script src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            await window.app.abrirDB();
-            await cargarDashboard();
-        });
-
-        async function cargarDashboard() {
-            const container = document.getElementById('dashboardContent');
-            const anio = new Date().getFullYear();
-            document.getElementById('anioDisplay').textContent = anio;
-
-            // Obtener todas las transacciones del año
-            let todasTransacciones = [];
-            const meses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-            
-            for (const mes of meses) {
-                const trans = await window.app.obtenerTransacciones(mes, anio);
-                // Agregar el mes a cada transacción para saber de qué mes es
-                trans.forEach(t => t._mes = mes);
+        .selector-anio select {
+            padding:
