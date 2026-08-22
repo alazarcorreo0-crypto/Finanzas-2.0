@@ -5,51 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="styles.css">
     <title>Patrimonio Neto</title>
+    <style>
+        .patrimonio-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 8px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .patrimonio-section h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .patrimonio-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 14px;
+        }
+        .patrimonio-item input[type="number"] {
+            width: 90px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: right;
+        }
+        .patrimonio-item button {
+            background: none;
+            border: none;
+            color: #c62828;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-agregar {
+            width: 100%;
+            padding: 8px;
+            background: none;
+            border: 1px dashed #4caf50;
+            border-radius: 8px;
+            margin-top: 8px;
+            cursor: pointer;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        .btn-agregar.danger {
+            border-color: #c62828;
+            color: #c62828;
+        }
+        .patrimonio-resumen {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 8px 16px;
+        }
+        .patrimonio-resumen .box {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .patrimonio-resumen .box.activos { background: #e8f5e9; }
+        .patrimonio-resumen .box.pasivos { background: #fce4ec; }
+        .patrimonio-resumen .box.patrimonio { background: #e3f2fd; }
+        .patrimonio-resumen .box .label { font-size: 10px; color: #999; text-transform: uppercase; }
+        .patrimonio-resumen .box .value { font-size: 18px; font-weight: 700; display: block; }
+        .patrimonio-resumen .box .value.positive { color: #2e7d32; }
+        .patrimonio-resumen .box .value.negative { color: #c62828; }
+        .selector-mes-patrimonio {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 8px 16px;
+            align-items: center;
+        }
+        .selector-mes-patrimonio button {
+            padding: 6px 12px;
+            background: #ddd;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .selector-mes-patrimonio span {
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
-        <a href="index.html" style="color:white; text-decoration:none;">←</a>
+        <a href="index.html" style="color:white; text-decoration:none; font-size:20px;">←</a>
         <h1>🏦 Patrimonio Neto</h1>
         <span class="year" id="patrimonioTotal">$0.00</span>
     </header>
 
-    <div style="display:flex; justify-content:space-between; padding:8px 16px; gap:8px;">
-        <button onclick="cambiarMesPatrimonio(-1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">◀</button>
-        <span id="mesPatrimonioDisplay" style="font-weight:bold; font-size:18px; padding:8px;">Enero 2025</span>
-        <button onclick="cambiarMesPatrimonio(1)" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:8px; font-size:16px;">▶</button>
+    <div class="selector-mes-patrimonio">
+        <button onclick="cambiarMesPatrimonio(-1)">◀</button>
+        <span id="mesPatrimonioDisplay">Enero 2025</span>
+        <button onclick="cambiarMesPatrimonio(1)">▶</button>
     </div>
 
-    <div style="padding:8px 16px;">
-        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:12px;">
-            <h3 style="margin-bottom:8px;">💰 Activos</h3>
-            <div id="activosContainer"></div>
-            <button onclick="agregarActivo()" style="width:100%; padding:8px; background:#e8f5e9; border:1px dashed #4caf50; border-radius:8px; margin-top:8px;">+ Agregar Activo</button>
+    <div class="patrimonio-resumen" id="patrimonioResumen">
+        <div class="box activos">
+            <span class="label">💰 Activos</span>
+            <span class="value positive" id="totalActivos">$0.00</span>
         </div>
-
-        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-            <h3 style="margin-bottom:8px;">📉 Pasivos</h3>
-            <div id="pasivosContainer"></div>
-            <button onclick="agregarPasivo()" style="width:100%; padding:8px; background:#fce4ec; border:1px dashed #c62828; border-radius:8px; margin-top:8px;">+ Agregar Pasivo</button>
+        <div class="box pasivos">
+            <span class="label">📉 Pasivos</span>
+            <span class="value negative" id="totalPasivos">$0.00</span>
         </div>
-    </div>
-
-    <!-- Resumen -->
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:8px 16px; margin-top:8px;">
-        <div style="background:#e8f5e9; padding:12px; border-radius:8px; text-align:center;">
-            <small>Activos</small>
-            <strong id="totalActivos" style="display:block; color:#2e7d32;">$0.00</strong>
-        </div>
-        <div style="background:#fce4ec; padding:12px; border-radius:8px; text-align:center;">
-            <small>Pasivos</small>
-            <strong id="totalPasivos" style="display:block; color:#c62828;">$0.00</strong>
-        </div>
-        <div style="background:#e3f2fd; padding:12px; border-radius:8px; text-align:center;">
-            <small>Patrimonio</small>
-            <strong id="patrimonioNeto" style="display:block;">$0.00</strong>
+        <div class="box patrimonio">
+            <span class="label">📊 Patrimonio</span>
+            <span class="value" id="patrimonioNeto">$0.00</span>
         </div>
     </div>
 
-    <!-- Navegación inferior -->
+    <div class="patrimonio-section" id="activosSection">
+        <h3>💰 Activos</h3>
+        <div id="activosContainer"></div>
+        <button class="btn-agregar" onclick="agregarActivo()">+ Agregar Activo</button>
+    </div>
+
+    <div class="patrimonio-section" id="pasivosSection">
+        <h3>📉 Pasivos</h3>
+        <div id="pasivosContainer"></div>
+        <button class="btn-agregar danger" onclick="agregarPasivo()">+ Agregar Pasivo</button>
+    </div>
+
     <nav class="bottom-nav">
         <a href="index.html"><span class="icon">🏠</span>Inicio</a>
         <a href="presupuesto.html"><span class="icon">📋</span>Presupuesto</a>
@@ -67,10 +151,20 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             await window.app.abrirDB();
+            const anioConfig = await window.app.obtenerConfiguracion('anio');
+            if (anioConfig) anioPatrimonio = parseInt(anioConfig);
+            actualizarMesDisplayPatrimonio();
             await cargarPatrimonio();
         });
 
+        function actualizarMesDisplayPatrimonio() {
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            document.getElementById('mesPatrimonioDisplay').textContent = `${meses[mesPatrimonio - 1]} ${anioPatrimonio}`;
+        }
+
         async function cargarPatrimonio() {
+            // Para activos: mes normal, para pasivos: mes + 100 para diferenciar
             activos = await window.app.obtenerPatrimonio(mesPatrimonio);
             pasivos = await window.app.obtenerPatrimonio(mesPatrimonio + 100);
             
@@ -82,6 +176,7 @@
         function renderizarActivos() {
             const container = document.getElementById('activosContainer');
             container.innerHTML = '';
+            const moneda = localStorage.getItem('moneda') || '$';
             
             if (activos.length === 0) {
                 container.innerHTML = '<p style="color:#999; font-size:14px;">No hay activos registrados</p>';
@@ -90,14 +185,13 @@
             
             activos.forEach(a => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;';
+                div.className = 'patrimonio-item';
                 div.innerHTML = `
                     <span>${a.subcategoria}</span>
                     <span>
                         <input type="number" value="${a.monto}" 
-                               onchange="actualizarActivo(${a.id}, this.value)"
-                               style="width:100px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; text-align:right;">
-                        <button onclick="eliminarPatrimonio(${a.id})" style="background:none; border:none; color:#c62828;">✕</button>
+                               onchange="actualizarActivo(${a.id}, this.value)">
+                        <button onclick="eliminarPatrimonio(${a.id})">🗑️</button>
                     </span>
                 `;
                 container.appendChild(div);
@@ -115,14 +209,13 @@
             
             pasivos.forEach(p => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;';
+                div.className = 'patrimonio-item';
                 div.innerHTML = `
                     <span>${p.subcategoria}</span>
                     <span>
                         <input type="number" value="${p.monto}" 
-                               onchange="actualizarPasivo(${p.id}, this.value)"
-                               style="width:100px; padding:4px 8px; border:1px solid #ddd; border-radius:4px; text-align:right;">
-                        <button onclick="eliminarPatrimonio(${p.id})" style="background:none; border:none; color:#c62828;">✕</button>
+                               onchange="actualizarPasivo(${p.id}, this.value)">
+                        <button onclick="eliminarPatrimonio(${p.id})">🗑️</button>
                     </span>
                 `;
                 container.appendChild(div);
@@ -133,18 +226,19 @@
             const totalActivos = activos.reduce((sum, a) => sum + a.monto, 0);
             const totalPasivos = pasivos.reduce((sum, p) => sum + p.monto, 0);
             const patrimonio = totalActivos - totalPasivos;
+            const moneda = localStorage.getItem('moneda') || '$';
             
-            document.getElementById('totalActivos').textContent = window.app.formatearMoneda(totalActivos);
-            document.getElementById('totalPasivos').textContent = window.app.formatearMoneda(totalPasivos);
-            document.getElementById('patrimonioNeto').textContent = window.app.formatearMoneda(patrimonio);
-            document.getElementById('patrimonioTotal').textContent = window.app.formatearMoneda(patrimonio);
-            document.getElementById('patrimonioNeto').style.color = patrimonio >= 0 ? '#2e7d32' : '#c62828';
+            document.getElementById('totalActivos').textContent = window.app.formatearMoneda(totalActivos, moneda);
+            document.getElementById('totalPasivos').textContent = window.app.formatearMoneda(totalPasivos, moneda);
+            document.getElementById('patrimonioNeto').textContent = window.app.formatearMoneda(patrimonio, moneda);
+            document.getElementById('patrimonioTotal').textContent = window.app.formatearMoneda(patrimonio, moneda);
+            document.getElementById('patrimonioNeto').className = 'value ' + (patrimonio >= 0 ? 'positive' : 'negative');
         }
 
         async function agregarActivo() {
-            const nombre = prompt('Nombre del activo:');
+            const nombre = prompt('Nombre del activo (ej: Cuenta de Ahorros, Casa, etc.):');
             if (!nombre) return;
-            const monto = parseFloat(prompt('Monto:'));
+            const monto = parseFloat(prompt('Monto en ' + (localStorage.getItem('moneda') || '$') + ':'));
             if (isNaN(monto) || monto < 0) return;
             
             await window.app.guardarPatrimonio({
@@ -157,9 +251,9 @@
         }
 
         async function agregarPasivo() {
-            const nombre = prompt('Nombre del pasivo:');
+            const nombre = prompt('Nombre del pasivo (ej: Tarjeta de Crédito, Préstamo, etc.):');
             if (!nombre) return;
-            const monto = parseFloat(prompt('Monto:'));
+            const monto = parseFloat(prompt('Monto en ' + (localStorage.getItem('moneda') || '$') + ':'));
             if (isNaN(monto) || monto < 0) return;
             
             await window.app.guardarPatrimonio({
@@ -175,7 +269,6 @@
             const item = activos.find(a => a.id === id);
             if (item) {
                 item.monto = parseFloat(nuevoMonto) || 0;
-                // En una implementación real, aquí se actualizaría en la DB
                 await window.app.guardarPatrimonio({
                     mes: mesPatrimonio,
                     tipo: 'ACTIVO',
@@ -202,23 +295,16 @@
 
         async function eliminarPatrimonio(id) {
             if (confirm('¿Eliminar este ítem?')) {
-                const tx = window.app.db.transaction('patrimonio', 'readwrite');
-                tx.objectStore('patrimonio').delete(id);
+                await window.app.eliminarPatrimonio(id);
                 await cargarPatrimonio();
             }
         }
 
         function cambiarMesPatrimonio(delta) {
             mesPatrimonio += delta;
-            if (mesPatrimonio > 12) {
-                mesPatrimonio = 1;
-                anioPatrimonio++;
-            } else if (mesPatrimonio < 1) {
-                mesPatrimonio = 12;
-                anioPatrimonio--;
-            }
-            document.getElementById('mesPatrimonioDisplay').textContent = 
-                `${window.app.obtenerNombreMes(mesPatrimonio)} ${anioPatrimonio}`;
+            if (mesPatrimonio > 12) { mesPatrimonio = 1; anioPatrimonio++; }
+            if (mesPatrimonio < 1) { mesPatrimonio = 12; anioPatrimonio--; }
+            actualizarMesDisplayPatrimonio();
             cargarPatrimonio();
         }
     </script>
